@@ -4,14 +4,16 @@ import random
 
 class TTT:
     def __init__(self):
-        self.board = np.zeros((3, 3))
+        self._board = None
+        self.mark_lookup = None
 
-    def reset(self):
-        self.board = np.zeros((3, 3))
+    def reset(self, x_is_1=True):
+        self._board = np.zeros((3, 3))
+        self.mark_lookup = {'X': 1, 'O': -1} if x_is_1 else {'X': -1, 'O': 1}
         return self.board
 
     def open_spaces(self):
-        return np.argwhere(self.board == 0)
+        return np.argwhere(self._board == 0)
 
     def is_legal(self, action):
         space = (action // 3, action % 3)
@@ -22,30 +24,29 @@ class TTT:
 
         self.mark_space(space)
 
-
         return (self.board, 1.0 if self.is_won() else 0.0, self.is_finished())
 
     def mark_space(self, space):
-        mark = self.whose_turn()
-        letter = 'X' if mark == 1 else 'O'
-        # print('{} moves to {}'.format(letter, space))
+        letter = self.whose_turn()
+
+        mark = self.mark_lookup[letter]
 
         if self.board_get(space) != 0:
             raise Exception('Illegal action!')
 
-        self.board[space[0]][space[1]] = mark
+        self._board[space[0]][space[1]] = mark
 
     def board_get(self, space):
-        return self.board[space[0]][space[1]]
+        return self._board[space[0]][space[1]]
 
     def whose_turn(self):
         if self.open_spaces().shape[0] == 0:
             return None
 
-        if self.open_spaces().shape[0] % 2 == 0:
-            return -1
+        if self.open_spaces().shape[0] % 2 == 1:
+            return 'X'
         else:
-            return 1
+            return 'O'
 
     def is_won(self):
         for w in ALL_WINS:
@@ -61,20 +62,23 @@ class TTT:
     def is_finished(self):
         return self.is_won() or self.open_spaces().shape[0] == 0
 
+    @property
+    def board(self):
+        return np.array(self._board)
+
 
 
 class TTT2:
     def __init__(self):
         self.env = TTT()
-        self.ai_player_i = 1 if random.random() < 0.5 else -1
-        # self.ai_player_i = -1
-        if self.ai_player_i == 1:
-            self.ai_move()
+        self.reset()
 
     def reset(self):
-        self.env.reset()
-        self.ai_player_i = 1 if random.random() < 0.5 else -1
-        if self.ai_player_i == 1:
+        ai_first = random.random() > 0.5
+        self.env.reset(x_is_1=(not ai_first))
+        self.ai_mark = -1
+        if ai_first:
+            self.ai_mark = 1
             self.ai_move()
 
         return self.env.board
@@ -98,7 +102,7 @@ class TTT2:
             blank_count = 0
             blank = None
             for space in w:
-                if self.env.board_get(space) == -1*self.ai_player_i:
+                if self.env.board_get(space) == -1*self.ai_mark:
                     opp_count += 1
                 if self.env.board_get(space) == 0:
                     blank_count += 1
@@ -167,6 +171,7 @@ def print_board(env):
 #     print_board(e.env)
 #     user_input = input('\nChoose your move ')
 #     output = e.step(int(user_input))
+#     print('****', e.env.board)
 #     is_finished = output[2]
 #
 # print(output)

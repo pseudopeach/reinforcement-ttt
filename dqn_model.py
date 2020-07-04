@@ -8,12 +8,11 @@ class DQNModel:
     def create_model(self):
         model = keras.Sequential()
 
-        model.add(keras.layers.Conv2D(8, (3, 3), input_shape=(3, 3, 1)))
+        model.add(keras.layers.Conv2D(16, (3, 3), input_shape=(3, 3, 1)))
         model.add(keras.layers.Activation('relu'))
-        # model.add(keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
         model.add(keras.layers.Flatten())
-        model.add(keras.layers.Dense(64, activation='relu'))
+        model.add(keras.layers.Dense(96, activation='relu'))
         model.add(keras.layers.Dropout(0.2))
 
         model.add(keras.layers.Dense(9, activation='linear'))
@@ -30,12 +29,19 @@ class DQNModel:
     def save(self, path):
         self.kernel.save(path)
 
+    @classmethod
+    def load(cls, path):
+        model = DQNModel()
+        model.kernel = keras.models.load_model(path)
+        return model
+
     def predict(self, inputs):
         inputs = inputs.reshape((-1, 3, 3, 1))
         return self.kernel.predict(inputs)
 
-    def fit(self, *args, **kwargs):
-        return self.kernel.fit(*args, **kwargs)
+    def fit(self, inputs, targets, **kwargs):
+        inputs = inputs.reshape((-1, 3, 3, 1))
+        return self.kernel.fit(inputs, targets, **kwargs)
 
     def get_weights(self, *args, **kwargs):
         return self.kernel.get_weights(*args, **kwargs)
